@@ -38,13 +38,7 @@ enum ScanProcessor {
                     return
                 }
                 let observations = (request.results as? [VNRecognizedTextObservation]) ?? []
-                // Vision doesn't guarantee reading order, so sort top-to-bottom, then left-to-right.
-                let sorted = observations.sorted {
-                    abs($0.boundingBox.midY - $1.boundingBox.midY) > 0.01
-                        ? $0.boundingBox.midY > $1.boundingBox.midY
-                        : $0.boundingBox.midX < $1.boundingBox.midX
-                }
-                let text = sorted.compactMap { $0.topCandidates(1).first?.string }.joined(separator: "\n")
+                let text = Self.reconstructReadingOrder(from: observations)
                 continuation.resume(returning: text)
             }
             request.recognitionLevel = .accurate
@@ -55,5 +49,36 @@ enum ScanProcessor {
                 continuation.resume(throwing: error)
             }
         }
+    }
+
+    /// Vision returns observations in no guaranteed order. Reconstruct reading order by clustering
+    /// observations into horizontal lines (by vertical center, within a fraction of line height) and
+    /// then ordering each line's words left-to-right — a single left-to-right/top-to-bottom `sorted`
+    /// comparator isn't a valid strict ordering here since "same line" isn't a transitive relation,
+    /// which was scrambling multi-column receipt layouts (e.g. a label separated from its amount).
+    static func reconstructReadingOrder(from observations: [VNRecognizedTextObservation]) -> String {
+        // Vision's normalized image coordinates have their origin at the bottom-left with y increasing
+        // upward, so descending midY walks the page top-to-bottom.
+        let topToBottom = observations.sorted { $0.boundingBox.midY > $1.boundingBox.midY }
+
+        var lines: [[VNRecognizedTextObservation]] = []
+        for observation in topToBottom {
+            let lineHeight = observation.boundingBox.height
+            if let lastLine = lines.last,
+               let reference = lastLine.first,
+               abs(observation.boundingBox.midY - reference.boundingBox.midY) < lineHeight * 0.6 {
+                lines[lines.count - 1].append(observation)
+            } else {
+                lines.append([observation])
+            }
+        }
+
+        return lines
+            .map { line in
+                line.sorted { $0.boundingBox.midX < $1.boundingBox.midX }
+                    .compactMap { $0.topCandidates(1).first?.string }
+                    .joined(separator: " ")
+            }
+            .joined(separator: "\n")
     }
 }
