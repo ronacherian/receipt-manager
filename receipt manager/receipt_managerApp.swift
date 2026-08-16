@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import CloudKit
 
 @main
 struct receipt_managerApp: App {
@@ -15,7 +16,11 @@ struct receipt_managerApp: App {
             Receipt.self,
             ReceiptPage.self,
         ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .private("iCloud.racllc.receipt-manager")
+        )
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
