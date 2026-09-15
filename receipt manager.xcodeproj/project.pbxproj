@@ -397,7 +397,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Receipt Manager";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Used to scan paper receipts.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Receipt Manager requires camera access to scan your paper receipts for automatic text recognition, expense logging, and return deadline tracking.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -443,7 +443,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_CFBundleDisplayName = "Receipt Manager";
-				INFOPLIST_KEY_NSCameraUsageDescription = "Used to scan paper receipts.";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Receipt Manager requires camera access to scan your paper receipts for automatic text recognition, expense logging, and return deadline tracking.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

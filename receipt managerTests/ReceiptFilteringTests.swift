@@ -2,6 +2,7 @@
 //  ReceiptFilteringTests.swift
 //  receipt managerTests
 //
+//
 
 import Testing
 import Foundation
@@ -13,7 +14,8 @@ struct ReceiptFilteringTests {
                               daysAgo: Int,
                               total: Decimal,
                               returnByDaysFromNow: Int? = nil,
-                              isReturnCompleted: Bool = false) -> Receipt {
+                              isReturnCompleted: Bool = false,
+                              rawOCRText: String = "") -> Receipt {
         let purchaseDate = Calendar.current.date(byAdding: .day, value: -daysAgo, to: .now)!
         let returnByDate = returnByDaysFromNow.map {
             Calendar.current.date(byAdding: .day, value: $0, to: .now)!
@@ -23,7 +25,8 @@ struct ReceiptFilteringTests {
             purchaseDate: purchaseDate,
             totalAmount: total,
             returnByDate: returnByDate,
-            isReturnCompleted: isReturnCompleted
+            isReturnCompleted: isReturnCompleted,
+            rawOCRText: rawOCRText
         )
     }
 
@@ -95,5 +98,40 @@ struct ReceiptFilteringTests {
 
         #expect(groups.map(\.store) == ["Costco", "Target"])
         #expect(groups.first { $0.store == "Target" }?.receipts.count == 2)
+    }
+
+    @Test func searchMatchesStoreName() {
+        let target = makeReceipt(store: "Target", daysAgo: 1, total: 20)
+        let bestBuy = makeReceipt(store: "Best Buy", daysAgo: 2, total: 50)
+        let apple = makeReceipt(store: "Apple Store", daysAgo: 3, total: 100)
+
+        let results = ReceiptListLogic.searched([target, bestBuy, apple], query: "target")
+        #expect(results.count == 1)
+        #expect(results.first?.storeName == "Target")
+    }
+
+    @Test func searchMatchesOCRText() {
+        let r1 = makeReceipt(store: "Supermarket", daysAgo: 1, total: 20, rawOCRText: "Organic Bananas Milk Bread")
+        let r2 = makeReceipt(store: "Tech Hub", daysAgo: 2, total: 50, rawOCRText: "USB-C Cable Charger")
+
+        let results = ReceiptListLogic.searched([r1, r2], query: "bananas")
+        #expect(results.count == 1)
+        #expect(results.first?.storeName == "Supermarket")
+    }
+
+    @Test func filteredAndSortedWithSearchSortsByStoreName() {
+        let zStore = makeReceipt(store: "Zara", daysAgo: 1, total: 50, rawOCRText: "Black Leather Jacket")
+        let aStore = makeReceipt(store: "Amazon", daysAgo: 10, total: 25, rawOCRText: "Winter Jacket")
+        let hStore = makeReceipt(store: "H&M", daysAgo: 5, total: 30, rawOCRText: "Puffer Jacket")
+
+        let results = ReceiptListLogic.filteredAndSorted(
+            [zStore, aStore, hStore],
+            filter: .all,
+            sort: .dateDescending,
+            searchQuery: "jacket"
+        )
+
+        #expect(results.count == 3)
+        #expect(results.map(\.storeName) == ["Amazon", "H&M", "Zara"])
     }
 }

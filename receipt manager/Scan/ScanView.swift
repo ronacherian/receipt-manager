@@ -5,10 +5,12 @@
 
 import SwiftUI
 import UIKit
+import VisionKit
 
 struct ScanView: View {
     @State private var showScanner = false
     @State private var showConfirmSheet = false
+    @State private var showUnsupportedAlert = false
     @State private var isProcessing = false
     @State private var pendingPages: [ScannedPage] = []
     @State private var extraction: ReceiptExtraction?
@@ -26,7 +28,11 @@ struct ScanView: View {
                     .padding(.horizontal, 32)
 
                 Button {
-                    showScanner = true
+                    if VNDocumentCameraViewController.isSupported {
+                        showScanner = true
+                    } else {
+                        showUnsupportedAlert = true
+                    }
                 } label: {
                     Label("Scan Receipt", systemImage: "camera.viewfinder")
                         .frame(maxWidth: .infinity)
@@ -40,6 +46,17 @@ struct ScanView: View {
                 }
             }
             .navigationTitle("Scan")
+            .alert("Scanner Unavailable", isPresented: $showUnsupportedAlert) {
+                Button("Enter Manually") {
+                    pendingPages = []
+                    extraction = nil
+                    extractionNotice = nil
+                    showConfirmSheet = true
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Document scanning is not supported on this device or simulator. You can still enter receipt details manually.")
+            }
             .fullScreenCover(isPresented: $showScanner) {
                 DocumentCameraView { result in
                     showScanner = false
