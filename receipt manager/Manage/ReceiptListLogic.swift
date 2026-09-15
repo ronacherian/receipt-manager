@@ -24,10 +24,29 @@ enum SortOption: String, CaseIterable, Identifiable {
 
 /// Pure filter/sort/group logic, kept out of the view so it's testable without SwiftData or SwiftUI.
 enum ReceiptListLogic {
-    static func filteredAndSorted(_ receipts: [Receipt], filter: ReturnFilter, sort sortOption: SortOption) -> [Receipt] {
+    static func filteredAndSorted(_ receipts: [Receipt], filter: ReturnFilter, sort sortOption: SortOption, searchQuery: String = "") -> [Receipt] {
         var result = filtered(receipts, filter: filter)
-        sort(&result, by: sortOption)
+        let query = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !query.isEmpty {
+            result = searched(result, query: query)
+            result.sort {
+                let s1 = $0.storeName.localizedCaseInsensitiveCompare($1.storeName)
+                if s1 != .orderedSame {
+                    return s1 == .orderedAscending
+                }
+                return $0.purchaseDate > $1.purchaseDate
+            }
+        } else {
+            sort(&result, by: sortOption)
+        }
         return result
+    }
+
+    static func searched(_ receipts: [Receipt], query: String) -> [Receipt] {
+        receipts.filter { receipt in
+            receipt.storeName.localizedCaseInsensitiveContains(query) ||
+            receipt.rawOCRText.localizedCaseInsensitiveContains(query)
+        }
     }
 
     static func filtered(_ receipts: [Receipt], filter: ReturnFilter) -> [Receipt] {

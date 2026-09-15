@@ -90,6 +90,8 @@ struct ReceiptConfirmSheet: View {
             modelContext.insert(receiptPage)
         }
 
+        NotificationManager.shared.scheduleReturnReminders(for: receipt)
+
         dismiss()
     }
 }

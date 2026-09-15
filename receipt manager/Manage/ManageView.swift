@@ -13,9 +13,10 @@ struct ManageView: View {
     @State private var filter: ReturnFilter = .all
     @State private var sortOption: SortOption = .dateDescending
     @State private var groupByStore = false
+    @State private var searchText = ""
 
     private var visibleReceipts: [Receipt] {
-        ReceiptListLogic.filteredAndSorted(receipts, filter: filter, sort: sortOption)
+        ReceiptListLogic.filteredAndSorted(receipts, filter: filter, sort: sortOption, searchQuery: searchText)
     }
 
     private var groups: [(store: String, receipts: [Receipt])] {
@@ -27,9 +28,9 @@ struct ManageView: View {
             List {
                 if visibleReceipts.isEmpty {
                     ContentUnavailableView(
-                        "No Receipts",
-                        systemImage: "tray",
-                        description: Text("Scan a receipt to see it here.")
+                        searchText.isEmpty ? "No Receipts" : "No Results",
+                        systemImage: searchText.isEmpty ? "tray" : "magnifyingglass",
+                        description: Text(searchText.isEmpty ? "Scan a receipt to see it here." : "No receipts matching \"\(searchText)\".")
                     )
                 } else if groupByStore {
                     ForEach(groups, id: \.store) { group in
@@ -46,6 +47,7 @@ struct ManageView: View {
                 }
             }
             .navigationTitle("Manage")
+            .searchable(text: $searchText, prompt: "Search stores or receipt items")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Toggle("Group by Store", isOn: $groupByStore)
@@ -84,6 +86,7 @@ struct ManageView: View {
         }
         .swipeActions(edge: .trailing) {
             Button(role: .destructive) {
+                NotificationManager.shared.cancelReminders(for: receipt)
                 modelContext.delete(receipt)
             } label: {
                 Label("Delete", systemImage: "trash")
@@ -93,6 +96,7 @@ struct ManageView: View {
             if !receipt.isReturnCompleted {
                 Button {
                     receipt.isReturnCompleted = true
+                    NotificationManager.shared.cancelReminders(for: receipt)
                 } label: {
                     Label("Mark Returned", systemImage: "checkmark.circle")
                 }
